@@ -18,6 +18,7 @@ struct Gameplay: View {
     @State private var animateViewsIn = false
     @State private var revealHint = false
     @State private var revealBook = false
+    @State private var tappedCorrectAnswer = false
     
     var body: some View {
         GeometryReader { geo in
@@ -151,6 +152,54 @@ struct Gameplay: View {
                     .padding()
                     
                     // MARK: Answers
+                    LazyVGrid(columns: [GridItem(), GridItem()]) {
+                        ForEach(game.answers, id: \.self) { answer in
+                            if answer == game.currentQuestion.answer {
+                                VStack {
+                                    if animateViewsIn {
+                                        Button {
+                                            tappedCorrectAnswer = true
+                                            
+                                            playCorrectSound()
+                                            
+                                            game.correct()
+                                        } label: {
+                                            Text(answer)
+                                                .minimumScaleFactor(0.5)
+                                                .multilineTextAlignment(.center)
+                                                .padding(10)
+                                                .frame(width: geo.size.width/2.15, height: 80)
+                                                .background(.green.opacity(0.5))
+                                                .clipShape(.rect(cornerRadius: 25))
+                                        }
+                                        .transition(.scale)
+                                    }
+                                }
+                                .animation(.easeOut(duration: 1).delay(1.5), value: animateViewsIn)
+                            } else {
+                                VStack {
+                                    if animateViewsIn {
+                                        Button {
+                                            playWrongSound()
+                                            
+                                            game.questionScore -= 1
+                                        } label: {
+                                            Text(answer)
+                                                .minimumScaleFactor(0.5)
+                                                .multilineTextAlignment(.center)
+                                                .padding(10)
+                                                .frame(width: geo.size.width/2.15, height: 80)
+                                                .background(.green.opacity(0.5))
+                                                .clipShape(.rect(cornerRadius: 25))
+                                        }
+                                        .transition(.scale)
+                                    }
+                                }
+                                .animation(.easeOut(duration: 1).delay(1.5), value: animateViewsIn)
+
+                            }
+                        }
+                    }
                     
                     Spacer()
                     
