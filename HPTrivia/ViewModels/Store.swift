@@ -15,6 +15,10 @@ class Store {
     
     private var updates: Task<Void, Never>? = nil
     
+    init() {
+        updates = watchForUpdates()
+    }
+    
     // Load available products
     func loadProducts() async {
         do {
@@ -61,7 +65,33 @@ class Store {
         }
     }
     
-    // Check for purchased product
+    // Check for purchased products
+    private func checkPurchased() async {
+        // Clear and rebuild the purchased set based on current entitlements
+        var newPurchased = Set<String>()
+        for product in products {
+            if let result = await Transaction.latest(for: product.id) {
+                switch result {
+                case .unverified(let transaction, let verificationError):
+                    print("Unverified transaction for \(transaction.productID): \(verificationError)")
+                case .verified(let transaction):
+                    if transaction.revocationDate == nil {
+                        newPurchased.insert(transaction.productID)
+                    }
+                }
+            }
+        }
+        purchased = newPurchased
+    }
+    // Recheck checkPurchase(), it might have some issues
     
     // Connect with App Store to watch for purchase and transactions updates
+    private func watchForUpdates() -> Task<Void, Never> {
+        Task(priority: .background) {
+            for await _ in Transaction.updates {
+                await checkPurchased()
+            }
+        }
+    }
 }
+
